@@ -152,10 +152,16 @@ nav button, .mobilebar button{transition:background .15s ease;}
 /* ====== CONFIGURAÇÃO DO SUPABASE ======
    Troque pelos valores do seu projeto (Settings > API no painel do Supabase).
    Se deixar como está, o app funciona só com armazenamento local do navegador. */
-const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
-const SUPABASE_ANON_KEY = 'SUA-CHAVE-ANON-PUBLICA';
-const SUPA_CONFIGURED = SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('SEU-PROJETO');
-const supabase = SUPA_CONFIGURED ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const SUPABASE_URL = 'sb_publishable_nBOa1gfDikFSX440OA7roQ_ZBYsHsG5';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml1bnN4ZW9od2t5eG90bm5xZ3VpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMDIwODMsImV4cCI6MjEwNTc3ODA4M30.SALaN91NUQRsBzh-DqHAym1J038pBqyiSfrNuZgWCZ0';
+let SUPA_CONFIGURED = SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('SEU-PROJETO');
+let sb = null;
+try{
+  if(SUPA_CONFIGURED){
+    if(!window.supabase){ throw new Error('Biblioteca do Supabase não carregou (CDN bloqueado ou sem internet).'); }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+}catch(e){ console.error('Falha ao configurar Supabase:', e); SUPA_CONFIGURED=false; sb=null; }
 
 const CATS = ["Bebidas","Carnes e Aves","Feijão e Grãos","Temperos e Condimentos","Hortifruti","Laticínios","Descartáveis","Limpeza","Outros"];
 const UNITS = ["kg","g","L","ml","un","cx","pct"];
@@ -210,52 +216,69 @@ function objToRow(table, d){
 
 async function storeAdd(name, data){
   if(USE_DB){
-    const {data:ins, error} = await supabase.from(name).insert(objToRow(name,data)).select().single();
+    const {data:ins, error} = await sb.from(name).insert(objToRow(name,data)).select().single();
     if(error){ showToast('Não foi possível salvar agora.','err'); throw error; }
     return rowToObj(name, ins);
   } else { const obj={id:uid(), ...data}; if(name==='movements'){ obj.createdAt = obj.createdAt||Date.now(); DB[name].unshift(obj); } else { DB[name].push(obj); } saveLocalAll(); return obj; }
 }
 async function storeUpdate(name, id, data){
   if(USE_DB){
-    const {error} = await supabase.from(name).update(data).eq('id', id);
+    const {error} = await sb.from(name).update(data).eq('id', id);
     if(error){ showToast('Não foi possível salvar a alteração.','err'); throw error; }
   } else { const o=DB[name].find(x=>x.id===id); if(o) Object.assign(o,data); saveLocalAll(); }
 }
 async function storeDelete(name, id){
   if(USE_DB){
-    const {error} = await supabase.from(name).delete().eq('id', id);
+    const {error} = await sb.from(name).delete().eq('id', id);
     if(error){ showToast('Não foi possível excluir.','err'); throw error; }
   } else { DB[name]=DB[name].filter(x=>x.id!==id); saveLocalAll(); }
 }
 
 async function fetchAllFromSupabase(){
   const [pr, mv, st] = await Promise.all([
-    supabase.from('products').select('*').order('name'),
-    supabase.from('movements').select('*').order('created_at',{ascending:false}).limit(500),
-    supabase.from('staff').select('*')
+    sb.from('products').select('*').order('name'),
+    sb.from('movements').select('*').order('created_at',{ascending:false}).limit(500),
+    sb.from('staff').select('*')
   ]);
   DB.products = (pr.data||[]).map(r=>rowToObj('products',r));
   DB.movements = (mv.data||[]).map(r=>rowToObj('movements',r));
   DB.staff = (st.data||[]).map(r=>rowToObj('staff',r));
 }
 function subscribeRealtime(){
-  supabase.channel('feij-changes')
-    .on('postgres_changes', {event:'*', schema:'public', table:'products'}, async()=>{ const {data}=await supabase.from('products').select('*').order('name'); DB.products=(data||[]).map(r=>rowToObj('products',r)); updateNavBadge(); render(); })
-    .on('postgres_changes', {event:'*', schema:'public', table:'movements'}, async()=>{ const {data}=await supabase.from('movements').select('*').order('created_at',{ascending:false}).limit(500); DB.movements=(data||[]).map(r=>rowToObj('movements',r)); render(); })
-    .on('postgres_changes', {event:'*', schema:'public', table:'staff'}, async()=>{ const {data}=await supabase.from('staff').select('*'); DB.staff=(data||[]).map(r=>rowToObj('staff',r)); if(document.getElementById('login-screen').style.display!=='none') renderLoginList(); else render(); })
+  sb.channel('feij-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'products'}, async()=>{ const {data}=await sb.from('products').select('*').order('name'); DB.products=(data||[]).map(r=>rowToObj('products',r)); updateNavBadge(); render(); })
+    .on('postgres_changes', {event:'*', schema:'public', table:'movements'}, async()=>{ const {data}=await sb.from('movements').select('*').order('created_at',{ascending:false}).limit(500); DB.movements=(data||[]).map(r=>rowToObj('movements',r)); render(); })
+    .on('postgres_changes', {event:'*', schema:'public', table:'staff'}, async()=>{ const {data}=await sb.from('staff').select('*'); DB.staff=(data||[]).map(r=>rowToObj('staff',r)); if(document.getElementById('login-screen').style.display!=='none') renderLoginList(); else render(); })
     .subscribe();
 }
 
 (async function boot(){
   USE_DB = SUPA_CONFIGURED;
   if(USE_DB){
-    try{ await fetchAllFromSupabase(); subscribeRealtime(); }catch(e){ USE_DB=false; loadLocalAll(); showToast('Não foi possível conectar ao Supabase — usando armazenamento local.','err'); }
+    try{
+      await Promise.race([
+        fetchAllFromSupabase(),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), 8000))
+      ]);
+      subscribeRealtime();
+    }catch(e){
+      console.error('Falha ao conectar no Supabase:', e);
+      USE_DB=false; loadLocalAll();
+      showToast('Não foi possível conectar ao Supabase — usando armazenamento local.','err');
+    }
   } else {
     loadLocalAll();
   }
   loaded = {products:true, movements:true, staff:true};
   afterLoad();
 })();
+window.addEventListener('error', function(){
+  if(document.getElementById('boot-screen').style.display!=='none'){
+    document.getElementById('boot-screen').style.display='none';
+    if(!DB.products) DB={products:[],movements:[],staff:[]};
+    if(!started && !session) showLogin();
+  }
+});
 
 let started=false;
 function afterLoad(){
