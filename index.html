@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Estoque Central · A Feijoada</title>
+<style>
+:root{
+  --iron:#1c1712; --iron2:#26201a; --clay:#a8452b; --clay2:#c9622f;
+  --parchment:#f7f0e2; --card:#fffdf8; --ink:#2a2118; --sub:#8a7a63; --line:#e6dcc6;
+  --brass:#b8862f; --sage:#4f7a52; --brick:#8f3324;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --parchment:#171310; --card:#20190f; --ink:#f0e6d2; --sub:#a5967c; --line:#3a3021;
+    --clay:#e0713f; --clay2:#f0985c; --brass:#e0b256; --sage:#7fb384; --brick:#e0713f;
+  }
+}
+:root[data-theme="dark"]{
+  --parchment:#171310; --card:#20190f; --ink:#f0e6d2; --sub:#a5967c; --line:#3a3021;
+  --clay:#e0713f; --clay2:#f0985c; --brass:#e0b256; --sage:#7fb384; --brick:#e0713f;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--parchment);color:var(--ink);font-family:Georgia,'Times New Roman',serif;}
+.wrap{display:flex;min-height:100vh;}
+aside{width:210px;flex-shrink:0;background:var(--iron);color:#efe6d4;padding:calc(20px + env(safe-area-inset-top,0px)) 0 20px;position:sticky;top:0;align-self:flex-start;height:100vh;overflow-y:auto;display:flex;flex-direction:column;}
+aside .brand{padding:0 20px 18px;border-bottom:1px solid #3a2f22;margin-bottom:10px;}
+aside .brand b{font-size:1.15rem;display:block;}
+aside .brand span{font-family:Arial,sans-serif;font-size:.68rem;color:#b8a687;letter-spacing:.3px;}
+aside nav{display:flex;flex-direction:column;gap:2px;padding:8px 10px;}
+aside nav button{text-align:left;font-family:Arial,sans-serif;font-size:.86rem;background:none;border:none;color:#d8cbb0;padding:10px 12px;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:10px;}
+aside nav button.active{background:var(--clay);color:#fff;}
+aside .foot{padding:14px 20px 0;font-family:Arial,sans-serif;font-size:.72rem;color:#b8a687;border-top:1px solid #3a2f22;margin-top:auto;}
+aside .foot .who{color:#efe6d4;font-weight:700;margin-bottom:2px;}
+aside .foot button{margin-top:8px;background:none;border:1px solid #4a3d2c;color:#d8cbb0;font-family:Arial,sans-serif;font-size:.72rem;padding:5px 10px;border-radius:6px;cursor:pointer;}
+main{flex:1;min-width:0;padding:calc(22px + env(safe-area-inset-top,0px)) 24px 60px;max-width:1040px;margin:0 auto;}
+.mobilebar{display:none;}
+.view{display:none;} .view.active{display:block;}
+.pagehead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;flex-wrap:wrap;gap:8px;}
+.pagehead h1{font-size:1.5rem;margin:0;font-weight:700;}
+.pagehead p{font-family:Arial,sans-serif;color:var(--sub);font-size:.82rem;margin:4px 0 0;}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:18px;}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+.kpi .n{font-size:1.6rem;font-weight:700;color:var(--brick);font-family:Georgia,serif;}
+.kpi .l{font-family:Arial,sans-serif;font-size:.7rem;color:var(--sub);margin-top:2px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;margin-bottom:16px;}
+.card h2{margin:0 0 14px;font-size:1.02rem;font-weight:700;display:flex;justify-content:space-between;align-items:center;}
+.card h2 .btn{margin:0;}
+label{display:block;font-family:Arial,sans-serif;font-size:.74rem;color:var(--sub);margin:12px 0 5px;}
+input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:var(--parchment);color:var(--ink);font-family:Arial,sans-serif;font-size:.9rem;}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--clay);outline-offset:1px;}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.btn{font-family:Arial,sans-serif;background:var(--clay);color:#fff;border:none;padding:10px 18px;border-radius:7px;font-size:.86rem;cursor:pointer;margin-top:16px;font-weight:600;}
+.btn:hover{background:var(--brick);}
+.btn.ghost{background:transparent;color:var(--clay);border:1px solid var(--clay);}
+.btn.small{padding:5px 10px;font-size:.72rem;margin:0;font-weight:500;}
+table{width:100%;border-collapse:collapse;font-family:Arial,sans-serif;font-size:.83rem;}
+th,td{text-align:left;padding:9px 7px;border-bottom:1px solid var(--line);white-space:nowrap;}
+th{color:var(--sub);font-weight:600;font-size:.68rem;letter-spacing:.3px;}
+.tag{display:inline-block;background:var(--parchment);border:1px solid var(--line);color:var(--ink);font-size:.68rem;padding:3px 9px;border-radius:20px;font-family:Arial,sans-serif;}
+.ok{color:var(--sage);font-weight:700;} .bad{color:var(--brick);font-weight:700;}
+.bar{background:var(--line);border-radius:20px;height:6px;width:90px;overflow:hidden;}
+.bar i{display:block;height:100%;background:var(--sage);}
+.bar.low i{background:var(--brick);}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.filters select,.filters input{width:auto;flex:1;min-width:130px;}
+.empty{font-family:Arial,sans-serif;color:var(--sub);font-size:.85rem;padding:26px 10px;text-align:center;border:1px dashed var(--line);border-radius:8px;}
+.tblwrap{overflow-x:auto;}
+.actions{display:flex;gap:6px;}
+.actions button{font-family:Arial,sans-serif;font-size:.7rem;padding:4px 9px;border-radius:6px;border:1px solid var(--line);background:var(--parchment);color:var(--ink);cursor:pointer;}
+.chartcard svg text{font-family:Arial,sans-serif;}
+.syncbadge{font-family:Arial,sans-serif;font-size:.65rem;padding:3px 8px;border-radius:20px;display:inline-block;margin-bottom:10px;}
+.syncbadge.on{background:rgba(79,122,82,.15);color:var(--sage);}
+.syncbadge.off{background:rgba(143,51,36,.12);color:var(--brick);}
+#login-screen{position:fixed;inset:0;background:var(--iron);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
+.loginbox{background:var(--card);border-radius:14px;padding:28px 26px;max-width:360px;width:100%;text-align:center;}
+.loginbox h1{margin:0 0 6px;font-size:1.3rem;}
+.loginbox p{font-family:Arial,sans-serif;color:var(--sub);font-size:.83rem;margin:0 0 16px;}
+.loginbox label{text-align:left;}
+.stafflist{display:flex;flex-direction:column;gap:8px;margin-bottom:6px;}
+.stafbtn{font-family:Arial,sans-serif;background:var(--parchment);border:1px solid var(--line);color:var(--ink);padding:11px;border-radius:8px;font-size:.9rem;cursor:pointer;text-align:left;}
+.stafbtn:hover{border-color:var(--clay);}
+#boot-screen{position:fixed;inset:0;background:var(--iron);color:#efe6d4;display:flex;flex-direction:column;gap:14px;align-items:center;justify-content:center;font-family:Arial,sans-serif;z-index:60;}
+.spinner{width:30px;height:30px;border-radius:50%;border:3px solid #4a3d2c;border-top-color:var(--clay2);animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.view.active{animation:fadeUp .28s ease both;}
+.card{transition:box-shadow .18s ease, transform .18s ease;}
+.card:hover{box-shadow:0 4px 16px rgba(0,0,0,.06);}
+.kpi{transition:transform .15s ease;}
+.kpi:hover{transform:translateY(-2px);}
+tbody tr, table tr{transition:background .15s ease;}
+table tr:hover td{background:rgba(0,0,0,.02);}
+.btn{transition:background .15s ease, transform .1s ease;}
+.btn:active{transform:scale(.97);}
+.stafbtn{transition:transform .12s ease, border-color .15s ease;}
+.stafbtn:hover{transform:translateX(3px);}
+nav button, .mobilebar button{transition:background .15s ease;}
+.navdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--brick);margin-left:auto;animation:pulse 1.6s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+#toast-container{position:fixed;top:calc(16px + env(safe-area-inset-top,0px));right:16px;z-index:80;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+.toast{font-family:Arial,sans-serif;font-size:.84rem;color:#fff;background:var(--sage);padding:11px 16px;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.18);animation:toastIn .25s ease both;max-width:280px;}
+.toast.err{background:var(--brick);}
+.toast.leaving{animation:toastOut .22s ease forwards;}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px);}to{opacity:1;transform:translateX(0);}}
+@keyframes toastOut{to{opacity:0;transform:translateX(30px);}}
+.qtybtn{font-family:Arial,sans-serif;width:24px;height:24px;border-radius:6px;border:1px solid var(--line);background:var(--parchment);color:var(--ink);cursor:pointer;font-weight:700;line-height:1;}
+.qtybtn:hover{background:var(--clay);color:#fff;border-color:var(--clay);}
+.qtywrap{display:flex;align-items:center;gap:6px;margin-top:4px;}
+@media (max-width:760px){
+  aside{display:none;}
+  main{padding:14px 14px 90px;}
+  .mobilebar{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--iron);padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));z-index:6;gap:2px;}
+  .mobilebar button{flex:1;background:none;border:none;color:#c9bb9e;font-family:Arial,sans-serif;font-size:.62rem;padding:6px 2px;border-radius:8px;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  .mobilebar button .ic{font-size:1.05rem;}
+  .mobilebar button.active{color:#fff;background:var(--clay);}
+  .row,.row3{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div id="boot-screen"><div class="spinner"></div><div>Carregando estoque…</div></div>
+<div id="login-screen" style="display:none"></div>
+<div id="toast-container"></div>
+<div class="wrap">
+<aside>
+  <div class="brand"><b>🫘 A Feijoada</b><span>ESTOQUE CENTRAL</span></div>
+  <nav id="tabs"></nav>
+  <div class="foot">
+    <div class="who" id="who-name"></div>
+    <span id="sync-note"></span>
+    <button onclick="logout()">Trocar usuário</button>
+  </div>
+</aside>
+<main>
+  <div class="view" id="v-dashboard"></div>
+  <div class="view" id="v-produtos"></div>
+  <div class="view" id="v-entrada"></div>
+  <div class="view" id="v-saida"></div>
+  <div class="view" id="v-mov"></div>
+  <div class="view" id="v-equipe"></div>
+</main>
+</div>
+<div class="mobilebar" id="mtabs"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ====== CONFIGURAÇÃO DO SUPABASE ======
+   Troque pelos valores do seu projeto (Settings > API no painel do Supabase).
+   Se deixar como está, o app funciona só com armazenamento local do navegador. */
+const SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
+const SUPABASE_ANON_KEY = 'SUA-CHAVE-ANON-PUBLICA';
+const SUPA_CONFIGURED = SUPABASE_URL.startsWith('https://') && !SUPABASE_URL.includes('SEU-PROJETO');
+const supabase = SUPA_CONFIGURED ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+const CATS = ["Bebidas","Carnes e Aves","Feijão e Grãos","Temperos e Condimentos","Hortifruti","Laticínios","Descartáveis","Limpeza","Outros"];
+const UNITS = ["kg","g","L","ml","un","cx","pct"];
+let DB = {products:[], movements:[], staff:[]};
+let USE_DB = false;
+let loaded = {products:false, movements:false, staff:false};
+let session = null;
+try{ session = JSON.parse(localStorage.getItem('feij_session')||'null'); }catch(e){}
+
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function fmt(n){ return (n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function today(){ return new Date().toISOString().slice(0,10); }
+function fmtDate(d){ const p=(d||'').split('-'); return p.length===3? p[2]+'/'+p[1]+'/'+p[0] : d; }
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function showToast(msg, type){
+  const box = document.getElementById('toast-container');
+  const t = document.createElement('div'); t.className='toast'+(type==='err'?' err':''); t.textContent=msg;
+  box.appendChild(t);
+  setTimeout(()=>{ t.classList.add('leaving'); setTimeout(()=>t.remove(),240); }, 2600);
+}
+function animateNumber(el, target, isMoney){
+  const start=0, dur=550, t0=performance.now();
+  function tick(t){
+    const p=Math.min(1,(t-t0)/dur); const v = start+(target-start)*(1-Math.pow(1-p,3));
+    el.textContent = isMoney? ('R$ '+fmt(v)) : Math.round(v);
+    if(p<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+function updateNavBadge(){
+  const n = DB.products.filter(p=>p.stock<=p.min).length;
+  document.querySelectorAll('[data-id="dashboard"]').forEach(b=>{
+    let dot = b.querySelector('.navdot');
+    if(n>0 && !dot){ dot=document.createElement('span'); dot.className='navdot'; b.appendChild(dot); }
+    else if(n===0 && dot){ dot.remove(); }
+  });
+}
+
+function saveLocalAll(){ try{ localStorage.setItem('feij_products', JSON.stringify(DB.products)); localStorage.setItem('feij_movements', JSON.stringify(DB.movements)); localStorage.setItem('feij_staff', JSON.stringify(DB.staff)); }catch(e){ alert('Erro ao salvar dados neste navegador.'); } }
+function loadLocalAll(){ try{ DB.products=JSON.parse(localStorage.getItem('feij_products')||'[]'); DB.movements=JSON.parse(localStorage.getItem('feij_movements')||'[]'); DB.staff=JSON.parse(localStorage.getItem('feij_staff')||'[]'); }catch(e){} }
+
+/* mapeia entre os nomes de coluna do Postgres (snake_case) e os campos usados no app */
+function rowToObj(table, r){
+  if(table==='movements') return {id:r.id, productId:r.product_id, type:r.type, qty:r.qty, date:r.date, reason:r.reason, obs:r.obs, price:r.price, staff:r.staff, createdAt:r.created_at};
+  return r;
+}
+function objToRow(table, d){
+  if(table==='movements') return {product_id:d.productId, type:d.type, qty:d.qty, date:d.date, reason:d.reason||null, obs:d.obs||null, price:(d.price!=null?d.price:null), staff:d.staff};
+  return d;
+}
+
+async function storeAdd(name, data){
+  if(USE_DB){
+    const {data:ins, error} = await supabase.from(name).insert(objToRow(name,data)).select().single();
+    if(error){ showToast('Não foi possível salvar agora.','err'); throw error; }
+    return rowToObj(name, ins);
+  } else { const obj={id:uid(), ...data}; if(name==='movements'){ obj.createdAt = obj.createdAt||Date.now(); DB[name].unshift(obj); } else { DB[name].push(obj); } saveLocalAll(); return obj; }
+}
+async function storeUpdate(name, id, data){
+  if(USE_DB){
+    const {error} = await supabase.from(name).update(data).eq('id', id);
+    if(error){ showToast('Não foi possível salvar a alteração.','err'); throw error; }
+  } else { const o=DB[name].find(x=>x.id===id); if(o) Object.assign(o,data); saveLocalAll(); }
+}
+async function storeDelete(name, id){
+  if(USE_DB){
+    const {error} = await supabase.from(name).delete().eq('id', id);
+    if(error){ showToast('Não foi possível excluir.','err'); throw error; }
+  } else { DB[name]=DB[name].filter(x=>x.id!==id); saveLocalAll(); }
+}
+
+async function fetchAllFromSupabase(){
+  const [pr, mv, st] = await Promise.all([
+    supabase.from('products').select('*').order('name'),
+    supabase.from('movements').select('*').order('created_at',{ascending:false}).limit(500),
+    supabase.from('staff').select('*')
+  ]);
+  DB.products = (pr.data||[]).map(r=>rowToObj('products',r));
+  DB.movements = (mv.data||[]).map(r=>rowToObj('movements',r));
+  DB.staff = (st.data||[]).map(r=>rowToObj('staff',r));
+}
+function subscribeRealtime(){
+  supabase.channel('feij-changes')
+    .on('postgres_changes', {event:'*', schema:'public', table:'products'}, async()=>{ const {data}=await supabase.from('products').select('*').order('name'); DB.products=(data||[]).map(r=>rowToObj('products',r)); updateNavBadge(); render(); })
+    .on('postgres_changes', {event:'*', schema:'public', table:'movements'}, async()=>{ const {data}=await supabase.from('movements').select('*').order('created_at',{ascending:false}).limit(500); DB.movements=(data||[]).map(r=>rowToObj('movements',r)); render(); })
+    .on('postgres_changes', {event:'*', schema:'public', table:'staff'}, async()=>{ const {data}=await supabase.from('staff').select('*'); DB.staff=(data||[]).map(r=>rowToObj('staff',r)); if(document.getElementById('login-screen').style.display!=='none') renderLoginList(); else render(); })
+    .subscribe();
+}
+
+(async function boot(){
+  USE_DB = SUPA_CONFIGURED;
+  if(USE_DB){
+    try{ await fetchAllFromSupabase(); subscribeRealtime(); }catch(e){ USE_DB=false; loadLocalAll(); showToast('Não foi possível conectar ao Supabase — usando armazenamento local.','err'); }
+  } else {
+    loadLocalAll();
+  }
+  loaded = {products:true, movements:true, staff:true};
+  afterLoad();
+})();
+
+let started=false;
+function afterLoad(){
+  if(!(loaded.staff&&loaded.products&&loaded.movements)) return;
+  document.getElementById('boot-screen').style.display='none';
+  if(session && !DB.staff.find(s=>s.id===session.id)) session=null;
+  if(!session){ showLogin(); }
+  else if(!started){ started=true; startApp(); }
+  else { updateNavBadge(); render(); renderLoginList(); }
+}
+
+function showLogin(){
+  document.getElementById('login-screen').style.display='flex';
+  document.querySelector('.wrap').style.display='none';
+  document.querySelector('.mobilebar').style.display='none';
+  renderLoginList();
+}
+function renderLoginList(){
+  const el = document.getElementById('login-screen');
+  if(el.style.display==='none') return;
+  if(!DB.staff.length){
+    el.innerHTML = `<div class="loginbox"><h1>🫘 A Feijoada</h1><p>Crie o primeiro usuário para começar a usar o estoque.</p>
+    <label>Seu nome</label><input id="ls-name" placeholder="Ex: Marcos">
+    <label>PIN de 4 dígitos</label><input id="ls-pin" type="password" maxlength="4" inputmode="numeric" placeholder="0000">
+    <button class="btn" onclick="createStaffAndLogin()">Criar usuário e entrar</button></div>`;
+  } else {
+    el.innerHTML = `<div class="loginbox"><h1>🫘 A Feijoada</h1><p>Quem está usando o estoque agora?</p>
+    <div class="stafflist">${DB.staff.map(s=>`<button class="stafbtn" onclick="tryLogin('${s.id}')">${esc(s.name)}</button>`).join('')}</div>
+    <div id="pinbox" style="display:none"><label>PIN de <span id="pin-who"></span></label><input id="ls-pin2" type="password" maxlength="4" inputmode="numeric"><button class="btn" onclick="confirmLogin()">Entrar</button></div>
+    <div id="addbox" style="display:none;margin-top:6px;text-align:left"><label>Nome</label><input id="ls-name"><label>PIN de 4 dígitos</label><input id="ls-pin" type="password" maxlength="4" inputmode="numeric"><button class="btn" onclick="createStaffAndLogin()">Criar e entrar</button></div>
+    <button class="btn ghost small" style="margin-top:14px" onclick="document.getElementById('addbox').style.display='block'">+ Novo usuário</button>
+    </div>`;
+  }
+}
+let pendingLoginId=null;
+function tryLogin(id){ pendingLoginId=id; const s=DB.staff.find(x=>x.id===id); document.getElementById('pin-who').textContent=s.name; document.getElementById('pinbox').style.display='block'; document.getElementById('ls-pin2').focus(); }
+function confirmLogin(){
+  const s = DB.staff.find(x=>x.id===pendingLoginId);
+  const pin = document.getElementById('ls-pin2').value;
+  if(!s || pin!==s.pin){ alert('PIN incorreto.'); return; }
+  session={id:s.id, name:s.name}; localStorage.setItem('feij_session', JSON.stringify(session));
+  document.getElementById('login-screen').style.display='none';
+  document.querySelector('.wrap').style.display='flex';
+  document.querySelector('.mobilebar').style.display='';
+  if(!started){ started=true; startApp(); } else render();
+}
+async function createStaffAndLogin(){
+  const name = document.getElementById('ls-name').value.trim();
+  const pin = document.getElementById('ls-pin').value.trim();
+  if(!name){ alert('Informe o nome.'); return; }
+  if(!/^\d{4}$/.test(pin)){ alert('O PIN deve ter exatamente 4 números.'); return; }
+  const s = await storeAdd('staff', {name, pin});
+  session={id:s.id, name:s.name}; localStorage.setItem('feij_session', JSON.stringify(session));
+  document.getElementById('login-screen').style.display='none';
+  document.querySelector('.wrap').style.display='flex';
+  document.querySelector('.mobilebar').style.display='';
+  if(!started){ started=true; startApp(); } else render();
+}
+function logout(){ session=null; localStorage.removeItem('feij_session'); showLogin(); }
+
+const TABS = [["dashboard","Painel","📊"],["produtos","Produtos","📦"],["entrada","Entrada","⬇️"],["saida","Saída","⬆️"],["mov","Histórico","📋"],["equipe","Equipe","👥"]];
+function startApp(){
+  const tabsEl = document.getElementById('tabs'), mtabsEl = document.getElementById('mtabs');
+  tabsEl.innerHTML=''; mtabsEl.innerHTML='';
+  TABS.forEach(([id,label,ic],i)=>{
+    const b=document.createElement('button'); b.innerHTML=`<span class="ic">${ic}</span> ${label}`; b.dataset.id=id; if(i===0)b.classList.add('active');
+    b.onclick=()=>switchTab(id); tabsEl.appendChild(b);
+    const m=document.createElement('button'); m.innerHTML=`<span class="ic">${ic}</span>${label}`; m.dataset.id=id; if(i===0)m.classList.add('active');
+    m.onclick=()=>switchTab(id); mtabsEl.appendChild(m);
+  });
+  document.getElementById('who-name').textContent = session.name;
+  document.getElementById('sync-note').innerHTML = USE_DB ? '<span class="syncbadge on">Sincronizado (Supabase)</span>' : '<span class="syncbadge off">Somente neste navegador</span>';
+  updateNavBadge();
+  render();
+}
+function switchTab(id){
+  document.querySelectorAll('nav button, .mobilebar button').forEach(b=>b.classList.toggle('active', b.dataset.id===id));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const v = document.getElementById('v-'+id); v.classList.remove('active'); void v.offsetWidth; v.classList.add('active');
+  render();
+}
+
+function productOptions(){
+  if(!DB.products.length) return '<option value="">Nenhum produto cadastrado</option>';
+  return DB.products.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>`<option value="${p.id}">${esc(p.name)} (${p.stock} ${p.unit})</option>`).join('');
+}
+
+function renderDashboard(){
+  const el = document.getElementById('v-dashboard');
+  const totalProd = DB.products.length;
+  const baixo = DB.products.filter(p=>p.stock<=p.min);
+  const valorEstoque = DB.products.reduce((s,p)=>s+p.stock*p.cost,0);
+  const monthKey = today().slice(0,7);
+  const vendasMes = DB.movements.filter(m=>m.type==='saida' && m.reason==='Venda' && m.date && m.date.slice(0,7)===monthKey).reduce((s,m)=>s+m.qty*(m.price||0),0);
+  const movMes = DB.movements.filter(m=>m.date && m.date.slice(0,7)===monthKey).length;
+
+  let html = `<div class="pagehead"><div><h1>Painel geral</h1><p>Visão consolidada do estoque de A Feijoada</p></div></div>
+  <div class="grid">
+    <div class="kpi"><div class="n" data-v="${totalProd}">0</div><div class="l">Produtos cadastrados</div></div>
+    <div class="kpi"><div class="n" data-v="${baixo.length}" style="color:${baixo.length>0?'var(--brick)':'var(--sage)'}">0</div><div class="l">Abaixo do estoque mínimo</div></div>
+    <div class="kpi"><div class="n" data-v="${valorEstoque}" data-money="1">R$ 0,00</div><div class="l">Valor total em estoque</div></div>
+    <div class="kpi"><div class="n" data-v="${vendasMes}" data-money="1">R$ 0,00</div><div class="l">Vendas registradas no mês</div></div>
+    <div class="kpi"><div class="n" data-v="${movMes}">0</div><div class="l">Movimentações no mês</div></div>
+  </div>`;
+
+  if(baixo.length>0){
+    html += `<div class="card"><h2>Estoque abaixo do mínimo</h2><div class="tblwrap"><table><tr><th>Produto</th><th>Categoria</th><th>Estoque</th><th>Mínimo</th></tr>`;
+    baixo.forEach(p=>{ html+=`<tr><td>${esc(p.name)}</td><td><span class="tag">${p.category}</span></td><td class="bad">${p.stock} ${p.unit}</td><td>${p.min} ${p.unit}</td></tr>`; });
+    html+=`</table></div></div>`;
+  }
+
+  const catData = CATS.map(c=>{ const items=DB.products.filter(p=>p.category===c); return {c, val: items.reduce((s,p)=>s+p.stock*p.cost,0), n:items.length}; }).filter(x=>x.n>0);
+  if(catData.length){
+    const max = Math.max(...catData.map(x=>x.val),1);
+    const bw = 720, rowH = 30, gap=6, pad=110;
+    const h = catData.length*(rowH+gap);
+    let svg = `<svg viewBox="0 0 ${bw} ${h}" width="100%" style="max-width:100%;height:auto">`;
+    catData.forEach((d,i)=>{
+      const y = i*(rowH+gap);
+      const w = (d.val/max)*(bw-pad-60);
+      svg += `<text x="0" y="${y+rowH/2+4}" font-size="12" fill="var(--ink)">${d.c}</text>`;
+      svg += `<rect x="${pad}" y="${y+3}" width="${Math.max(w,2)}" height="${rowH-6}" rx="4" fill="var(--clay2)"/>`;
+      svg += `<text x="${pad+w+8}" y="${y+rowH/2+4}" font-size="11" fill="var(--sub)">R$ ${fmt(d.val)}</text>`;
+    });
+    svg += `</svg>`;
+    html += `<div class="card chartcard"><h2>Valor em estoque por categoria</h2>${svg}</div>`;
+  }
+
+  const days = []; for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); }
+  const salesByDay = days.map(d=> DB.movements.filter(m=>m.type==='saida'&&m.reason==='Venda'&&m.date===d).reduce((s,m)=>s+m.qty*(m.price||0),0));
+  if(salesByDay.some(v=>v>0)){
+    const bw=680, bh=140, maxV=Math.max(...salesByDay,1), stepX=bw/6;
+    const pts = salesByDay.map((v,i)=> `${i*stepX},${bh-6-(v/maxV)*(bh-24)}`).join(' ');
+    let lsvg = `<svg viewBox="0 0 ${bw} ${bh+22}" width="100%" style="max-width:100%;height:auto">
+      <polyline points="${pts}" fill="none" stroke="var(--clay2)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    salesByDay.forEach((v,i)=>{ const x=i*stepX, y=bh-6-(v/maxV)*(bh-24);
+      lsvg += `<circle cx="${x}" cy="${y}" r="3.5" fill="var(--brick)"/>
+      <text x="${x}" y="${bh+16}" font-size="10" fill="var(--sub)" text-anchor="middle">${days[i].slice(8,10)}/${days[i].slice(5,7)}</text>`; });
+    lsvg += `</svg>`;
+    html += `<div class="card chartcard"><h2>Vendas nos últimos 7 dias</h2>${lsvg}</div>`;
+  }
+
+  html += `<div class="card"><h2>Últimas movimentações</h2>${movTable(DB.movements.slice(0,8))}</div>`;
+  el.innerHTML = html;
+  el.querySelectorAll('.kpi .n[data-v]').forEach(node=>{ animateNumber(node, parseFloat(node.dataset.v)||0, node.dataset.money==='1'); });
+}
+
+function movTable(list){
+  if(!list.length) return `<div class="empty">Nenhuma movimentação registrada ainda.</div>`;
+  let h = `<div class="tblwrap"><table><tr><th>Data</th><th>Produto</th><th>Tipo</th><th>Qtd</th><th>Motivo / Fornecedor</th><th>Quem</th></tr>`;
+  list.forEach(m=>{
+    const p = DB.products.find(x=>x.id===m.productId);
+    const cls = m.type==='entrada'?'ok':'bad'; const sinal = m.type==='entrada'?'+':'-';
+    h+=`<tr><td>${fmtDate(m.date)}</td><td>${p?esc(p.name):'(produto removido)'}</td><td class="${cls}">${m.type==='entrada'?'Entrada':'Saída'}</td><td class="${cls}">${sinal}${m.qty} ${p?p.unit:''}</td><td>${esc(m.reason||'')}</td><td>${esc(m.staff||'—')}</td></tr>`;
+  });
+  h+=`</table></div>`; return h;
+}
+
+function renderProdutos(){
+  const el = document.getElementById('v-produtos');
+  el.innerHTML = `<div class="pagehead"><div><h1>Produtos</h1><p>Cadastro central, separado por categoria</p></div></div>
+  <div class="card"><h2>Novo produto</h2>
+    <label>Nome do produto</label><input id="p-name" placeholder="Ex: Costelinha suína">
+    <div class="row">
+      <div><label>Categoria</label><select id="p-cat">${CATS.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div><label>Unidade</label><select id="p-unit">${UNITS.map(u=>`<option>${u}</option>`).join('')}</select></div>
+    </div>
+    <div class="row3">
+      <div><label>Estoque inicial</label><input id="p-stock" type="number" min="0" step="0.01" value="0"></div>
+      <div><label>Estoque mínimo</label><input id="p-min" type="number" min="0" step="0.01" value="0"></div>
+      <div></div>
+    </div>
+    <div class="row">
+      <div><label>Custo unitário (R$)</label><input id="p-cost" type="number" min="0" step="0.01" value="0"></div>
+      <div><label>Preço de venda (R$)</label><input id="p-price" type="number" min="0" step="0.01" value="0"></div>
+    </div>
+    <button class="btn" onclick="addProduct()">Cadastrar produto</button>
+  </div>
+  <div class="card"><h2>Produtos cadastrados (${DB.products.length})</h2>
+  <div class="filters">
+    <input id="f-search" placeholder="Buscar por nome..." oninput="renderProdutosList()">
+    <select id="f-cat" onchange="renderProdutosList()"><option value="">Todas as categorias</option>${CATS.map(c=>`<option>${c}</option>`).join('')}</select>
+  </div>
+  <div id="prod-list"></div></div>`;
+  renderProdutosList();
+}
+function renderProdutosList(){
+  const fcat = document.getElementById('f-cat').value, q = document.getElementById('f-search').value.trim().toLowerCase();
+  const list = DB.products.filter(p=>(!fcat||p.category===fcat)&&(!q||p.name.toLowerCase().includes(q))).sort((a,b)=>a.name.localeCompare(b.name));
+  const listEl = document.getElementById('prod-list');
+  if(!list.length){ listEl.innerHTML = `<div class="empty">Nenhum produto encontrado. Ajuste os filtros ou cadastre um novo produto acima.</div>`; return; }
+  let h = `<div class="tblwrap"><table><tr><th>Produto</th><th>Categoria</th><th>Estoque</th><th>Custo</th><th>Venda</th><th></th></tr>`;
+  list.forEach(p=>{
+    const pct = p.min>0? Math.min(100,(p.stock/p.min)*50) : (p.stock>0?100:0);
+    const low = p.stock<=p.min;
+    h+=`<tr><td>${esc(p.name)}</td><td><span class="tag">${p.category}</span></td>
+    <td><div class="${low?'bad':'ok'}">${p.stock} ${p.unit}</div><div class="bar ${low?'low':''}"><i style="width:${pct}%"></i></div>
+    <div class="qtywrap"><button class="qtybtn" onclick="quickAdjust('${p.id}',-1)">−</button><button class="qtybtn" onclick="quickAdjust('${p.id}',1)">+</button></div></td>
+    <td>R$ ${fmt(p.cost)}</td><td>R$ ${fmt(p.price)}</td>
+    <td class="actions"><button onclick="editProduct('${p.id}')">Editar</button><button onclick="delProduct('${p.id}')">Excluir</button></td></tr>`;
+  });
+  h+=`</table></div>`;
+  listEl.innerHTML = h;
+}
+async function addProduct(){
+  const name = document.getElementById('p-name').value.trim();
+  if(!name){ alert('Informe o nome do produto.'); return; }
+  await storeAdd('products', { name, category:document.getElementById('p-cat').value, unit:document.getElementById('p-unit').value,
+    stock:parseFloat(document.getElementById('p-stock').value)||0, min:parseFloat(document.getElementById('p-min').value)||0,
+    cost:parseFloat(document.getElementById('p-cost').value)||0, price:parseFloat(document.getElementById('p-price').value)||0 });
+  showToast('Produto cadastrado: '+name);
+  renderProdutos();
+}
+async function quickAdjust(id, delta){
+  const p = DB.products.find(x=>x.id===id); if(!p) return;
+  if(delta<0 && p.stock<=0){ showToast('Estoque já está em zero.','err'); return; }
+  const newStock = +(p.stock+delta).toFixed(3);
+  await storeUpdate('products', id, {stock:newStock});
+  await storeAdd('movements', {productId:p.id, type:delta>0?'entrada':'saida', qty:1, date:today(), reason:'Ajuste rápido', obs:'', staff:session.name, createdAt:Date.now()});
+  showToast(delta>0? `+1 ${p.unit} em ${p.name}` : `-1 ${p.unit} em ${p.name}`);
+  renderProdutosList();
+}
+async function editProduct(id){
+  const p = DB.products.find(x=>x.id===id); if(!p) return;
+  const name = prompt('Nome do produto:', p.name); if(name===null) return;
+  const min = prompt('Estoque mínimo ('+p.unit+'):', p.min); if(min===null) return;
+  const cost = prompt('Custo unitário (R$):', p.cost); if(cost===null) return;
+  const price = prompt('Preço de venda (R$):', p.price); if(price===null) return;
+  await storeUpdate('products', id, {name:name.trim()||p.name, min:parseFloat(min)||0, cost:parseFloat(cost)||0, price:parseFloat(price)||0});
+  showToast('Produto atualizado.');
+  renderProdutosList();
+}
+async function delProduct(id){
+  if(!confirm('Excluir este produto? O histórico de movimentações será mantido, mas o produto não aparecerá mais na lista.')) return;
+  await storeDelete('products', id); showToast('Produto excluído.'); renderProdutosList();
+}
+
+function renderEntrada(){
+  const el = document.getElementById('v-entrada');
+  el.innerHTML = `<div class="pagehead"><div><h1>Entrada de estoque</h1><p>Registre compras e recebimentos de fornecedores</p></div></div>`;
+  if(!DB.products.length){ el.innerHTML += `<div class="card empty">Cadastre um produto na aba Produtos antes de registrar entradas.</div>`; return; }
+  el.innerHTML += `<div class="card"><h2>Registrar entrada</h2>
+    <label>Produto</label><select id="e-prod">${productOptions()}</select>
+    <div class="row">
+      <div><label>Quantidade</label><input id="e-qty" type="number" min="0.01" step="0.01"></div>
+      <div><label>Data</label><input id="e-date" type="date" value="${today()}"></div>
+    </div>
+    <div class="row">
+      <div><label>Fornecedor</label><input id="e-forn" list="forn-list" placeholder="Ex: Distribuidora Central"><datalist id="forn-list">${[...new Set(DB.movements.filter(m=>m.type==='entrada'&&m.reason).map(m=>m.reason))].map(f=>`<option value="${esc(f)}">`).join('')}</datalist></div>
+      <div><label>Custo unitário (opcional)</label><input id="e-cost" type="number" min="0" step="0.01" placeholder="Manter atual"></div>
+    </div>
+    <label>Observações</label><textarea id="e-obs" rows="2"></textarea>
+    <button class="btn" onclick="addMov('entrada')">Registrar entrada</button>
+  </div>
+  <div class="card"><h2>Entradas recentes</h2>${movTable(DB.movements.filter(m=>m.type==='entrada').slice(0,10))}</div>`;
+}
+
+function renderSaida(){
+  const el = document.getElementById('v-saida');
+  el.innerHTML = `<div class="pagehead"><div><h1>Saída de estoque</h1><p>Registre vendas, perdas e consumo interno</p></div></div>`;
+  if(!DB.products.length){ el.innerHTML += `<div class="card empty">Cadastre um produto na aba Produtos antes de registrar saídas.</div>`; return; }
+  el.innerHTML += `<div class="card"><h2>Registrar saída</h2>
+    <label>Produto</label><select id="s-prod">${productOptions()}</select>
+    <div class="row">
+      <div><label>Quantidade</label><input id="s-qty" type="number" min="0.01" step="0.01"></div>
+      <div><label>Data</label><input id="s-date" type="date" value="${today()}"></div>
+    </div>
+    <label>Motivo</label>
+    <select id="s-reason"><option>Venda</option><option>Perda/Vencimento</option><option>Consumo interno</option><option>Ajuste de inventário</option></select>
+    <label>Observações</label><textarea id="s-obs" rows="2"></textarea>
+    <button class="btn" onclick="addMov('saida')">Registrar saída</button>
+  </div>
+  <div class="card"><h2>Saídas recentes</h2>${movTable(DB.movements.filter(m=>m.type==='saida').slice(0,10))}</div>`;
+}
+
+async function addMov(type){
+  const prodId = document.getElementById(type==='entrada'?'e-prod':'s-prod').value;
+  const qty = parseFloat(document.getElementById(type==='entrada'?'e-qty':'s-qty').value);
+  const date = document.getElementById(type==='entrada'?'e-date':'s-date').value || today();
+  const p = DB.products.find(x=>x.id===prodId);
+  if(!p){ alert('Selecione um produto.'); return; }
+  if(!qty || qty<=0){ alert('Informe uma quantidade válida.'); return; }
+  if(type==='saida' && qty>p.stock){ if(!confirm('Quantidade maior que o estoque atual ('+p.stock+' '+p.unit+'). O estoque ficará negativo. Continuar?')) return; }
+  const upd = {};
+  if(type==='entrada'){
+    const costInput = document.getElementById('e-cost').value;
+    upd.stock = +(p.stock + qty).toFixed(3);
+    if(costInput) upd.cost = parseFloat(costInput);
+    await storeAdd('movements', {productId:p.id, type:'entrada', qty, date, reason:document.getElementById('e-forn').value||'Fornecedor não informado', obs:document.getElementById('e-obs').value, staff:session.name, createdAt:Date.now()});
+  } else {
+    upd.stock = +(p.stock - qty).toFixed(3);
+    await storeAdd('movements', {productId:p.id, type:'saida', qty, date, reason:document.getElementById('s-reason').value, obs:document.getElementById('s-obs').value, price:p.price, staff:session.name, createdAt:Date.now()});
+  }
+  await storeUpdate('products', p.id, upd);
+  showToast(type==='entrada'?'Entrada registrada com sucesso.':'Saída registrada com sucesso.');
+  render();
+}
+
+function renderMov(){
+  const el = document.getElementById('v-mov');
+  el.innerHTML = `<div class="pagehead"><div><h1>Histórico de movimentações</h1><p>Todas as entradas e saídas registradas</p></div>
+  <button class="btn ghost small" onclick="exportCSV()">Exportar CSV</button></div>
+  <div class="card"><h2>Filtrar</h2>
+  <div class="filters">
+    <select id="m-type" onchange="renderMovList()"><option value="">Todos os tipos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option></select>
+    <select id="m-cat" onchange="renderMovList()"><option value="">Todas as categorias</option>${CATS.map(c=>`<option>${c}</option>`).join('')}</select>
+  </div>
+  <div id="mov-list"></div></div>`;
+  renderMovList();
+}
+function renderMovList(){
+  const t = document.getElementById('m-type').value, c = document.getElementById('m-cat').value;
+  let list = DB.movements.slice();
+  if(t) list = list.filter(m=>m.type===t);
+  if(c) list = list.filter(m=>{ const p=DB.products.find(x=>x.id===m.productId); return p && p.category===c; });
+  document.getElementById('mov-list').innerHTML = movTable(list);
+}
+function exportCSV(){
+  let rows = [['Data','Produto','Categoria','Tipo','Quantidade','Unidade','Motivo/Fornecedor','Quem registrou','Observações']];
+  DB.movements.forEach(m=>{ const p=DB.products.find(x=>x.id===m.productId);
+    rows.push([fmtDate(m.date), p?p.name:'(removido)', p?p.category:'', m.type==='entrada'?'Entrada':'Saída', m.qty, p?p.unit:'', m.reason||'', m.staff||'', m.obs||'']); });
+  const csv = rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='movimentacoes_feijoada.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exportado.');
+}
+
+function renderEquipe(){
+  const el = document.getElementById('v-equipe');
+  el.innerHTML = `<div class="pagehead"><div><h1>Equipe</h1><p>Quem pode acessar o estoque</p></div></div>
+  <div class="card"><h2>Adicionar usuário</h2>
+  <label>Nome</label><input id="eq-name" placeholder="Ex: Ana">
+  <label>PIN de 4 dígitos</label><input id="eq-pin" type="password" maxlength="4" inputmode="numeric" placeholder="0000">
+  <button class="btn" onclick="addStaffMember()">Adicionar</button></div>
+  <div class="card"><h2>Usuários (${DB.staff.length})</h2><div class="tblwrap"><table><tr><th>Nome</th><th></th></tr>
+  ${DB.staff.map(s=>`<tr><td>${esc(s.name)}${s.id===session.id?' <span class="tag">você</span>':''}</td><td class="actions"><button onclick="delStaffMember('${s.id}')">Remover</button></td></tr>`).join('')}
+  </table></div></div>`;
+}
+async function addStaffMember(){
+  const name = document.getElementById('eq-name').value.trim();
+  const pin = document.getElementById('eq-pin').value.trim();
+  if(!name){ alert('Informe o nome.'); return; }
+  if(!/^\d{4}$/.test(pin)){ alert('O PIN deve ter exatamente 4 números.'); return; }
+  await storeAdd('staff', {name, pin, createdAt:Date.now()});
+  showToast('Usuário adicionado: '+name);
+  renderEquipe();
+}
+async function delStaffMember(id){
+  if(id===session.id){ alert('Você não pode remover o usuário com o qual está logado agora.'); return; }
+  if(!confirm('Remover este usuário do acesso ao estoque?')) return;
+  await storeDelete('staff', id); showToast('Usuário removido.'); renderEquipe();
+}
+
+function render(){
+  if(!started) return;
+  const active = document.querySelector('nav button.active').dataset.id;
+  if(active==='dashboard') renderDashboard();
+  else if(active==='produtos') renderProdutos();
+  else if(active==='entrada') renderEntrada();
+  else if(active==='saida') renderSaida();
+  else if(active==='mov') renderMov();
+  else if(active==='equipe') renderEquipe();
+}
+</script>
+</body>
+</html>
